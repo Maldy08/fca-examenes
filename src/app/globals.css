@@ -3,6 +3,14 @@
 :root {
   --background: #ffffff;
   --foreground: #171717;
+
+  /* UABC FCA Palette */
+  --uabc-blue: #041E42;
+  --uabc-gold: #DD971A;
+  --uabc-crimson: #862633;
+  --uabc-green: #154734;
+  --uabc-button-green: #007141;
+  --uabc-secondary-blue: #0072CE;
 }
 
 @theme inline {
@@ -10,6 +18,14 @@
   --color-foreground: var(--foreground);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
+
+  /* UABC Colors */
+  --color-uabc-blue: var(--uabc-blue);
+  --color-uabc-gold: var(--uabc-gold);
+  --color-uabc-crimson: var(--uabc-crimson);
+  --color-uabc-green: var(--uabc-green);
+  --color-uabc-button-green: var(--uabc-button-green);
+  --color-uabc-secondary-blue: var(--uabc-secondary-blue);
 }
 
 @media (prefers-color-scheme: dark) {

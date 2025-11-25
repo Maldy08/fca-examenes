@@ -86,6 +86,7 @@ model ExamAttempt {
   
   // AGREGA ESTA LÍNEA:
   status      String    @default("in_progress") 
+  warnings    Int       @default(0) 
   
   answers     Answer[]
 }

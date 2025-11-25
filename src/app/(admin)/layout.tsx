@@ -8,22 +8,48 @@ export default function AdminLayout({
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Barra Superior (Navbar) */}
-      <nav className="bg-white border-b px-8 h-16 flex items-center justify-between sticky top-0 z-10">
-        <div className="flex items-center gap-8">
-          <Link href="/dashboard" className="text-xl font-bold text-blue-600 flex items-center gap-2">
-            <span>🎓</span> FCA Exámenes
+      <nav className="bg-white border-b border-gray-200 px-6 h-16 flex items-center justify-between sticky top-0 z-50 shadow-sm">
+
+        {/* Zona Izquierda: Logo y Menú */}
+        <div className="flex items-center gap-6">
+
+          {/* LOGO UABC (Clickeable para ir al inicio) */}
+          <Link href="/dashboard" className="flex items-center gap-3 hover:opacity-80 transition-opacity">
+            <img
+              src="/logo-uabc.png"
+              alt="FCA UABC"
+              className="h-10 w-auto object-contain"
+            />
+            {/* Pequeña línea divisoria vertical */}
+            <span className="h-6 w-px bg-gray-300 hidden md:block"></span>
+            <span className="font-bold text-gray-700 hidden md:block">Panel Docente</span>
           </Link>
-          <div className="hidden md:flex gap-6 text-sm font-medium text-gray-600">
-            <Link href="/dashboard" className="hover:text-blue-600 transition-colors">Mis Exámenes</Link>
-            <Link href="#" className="hover:text-blue-600 transition-colors">Alumnos</Link>
-            <Link href="#" className="hover:text-blue-600 transition-colors">Configuración</Link>
+
+          {/* Enlaces de Navegación */}
+          <div className="hidden md:flex gap-6 text-sm font-medium text-gray-500 ml-2">
+            <Link
+              href="/dashboard"
+              className="hover:text-uabc-green transition-colors"
+            >
+              Mis Exámenes
+            </Link>
+            <Link
+              href="#"
+              className="hover:text-uabc-green transition-colors cursor-not-allowed opacity-50"
+              title="Próximamente"
+            >
+              Alumnos
+            </Link>
           </div>
         </div>
-        
+
+        {/* Zona Derecha: Perfil del Profesor */}
         <div className="flex items-center gap-4">
-          <span className="text-sm text-gray-500 hidden md:block">Hola, Profe CMALDONADO</span>
-          <div className="h-8 w-8 bg-blue-100 rounded-full text-blue-700 flex items-center justify-center font-bold text-sm">
-            PC
+          <span className="text-sm text-gray-600 hidden md:block font-medium">
+            Profe. Maldonado
+          </span>
+          <div className="h-9 w-9 bg-uabc-green rounded-full text-white flex items-center justify-center font-bold text-sm shadow-sm ring-2 ring-white">
+            CM
           </div>
         </div>
       </nav>

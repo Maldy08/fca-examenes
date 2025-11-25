@@ -21,7 +21,7 @@ export default function QuestionCard({
   onAnswerChange,
   isSaving = false,
 }: QuestionCardProps) {
-  
+
   const renderInput = () => {
     // 3. Actualizamos el switch para usar los ENUMS de Prisma (Mayúsculas)
     switch (question.type) {
@@ -30,20 +30,19 @@ export default function QuestionCard({
           <div className="space-y-3">
             {question.options?.map((option) => (
               <label
-                key={option.id}
-                className={`flex items-center p-4 border rounded-lg cursor-pointer transition-all ${
-                  currentAnswer === option.id // OJO: Aquí comparamos IDs si guardas el ID, o texto si guardas texto
-                    ? "border-blue-500 bg-blue-50 ring-2 ring-blue-200"
-                    : "border-gray-200 hover:bg-gray-50"
-                }`}
+                key={option.id} // Keep original key for stability
+                className={`flex items-center p-4 rounded-xl border-2 cursor-pointer transition-all ${currentAnswer === option.id // Keep original comparison logic
+                    ? "border-uabc-button-green bg-uabc-button-green/5"
+                    : "border-gray-200 hover:border-gray-300 hover:bg-gray-50"
+                  }`}
               >
                 <input
                   type="radio"
-                  name={`question-${question.id}`}
-                  value={option.id} // Usamos el ID de la opción como valor
-                  checked={currentAnswer === option.id}
-                  onChange={(e) => onAnswerChange(e.target.value)}
-                  className="w-4 h-4 text-blue-600 border-gray-300 focus:ring-blue-500"
+                  name={`question-${question.id}`} // Keep original name for uniqueness
+                  value={option.id} // Keep original value
+                  checked={currentAnswer === option.id} // Keep original checked logic
+                  onChange={(e) => onAnswerChange(e.target.value)} // Keep original onChange handler
+                  className="w-5 h-5 text-uabc-button-green focus:ring-uabc-button-green"
                 />
                 <span className="ml-3 text-gray-700 font-medium">
                   {option.text}
@@ -94,17 +93,17 @@ export default function QuestionCard({
           {question.content}
         </h2>
         <div className="mt-2 h-4 flex items-center">
-            {isSaving ? (
-                <span className="text-xs text-amber-600 animate-pulse flex items-center">
-                    <span className="w-2 h-2 bg-amber-500 rounded-full mr-2"></span>
-                    Guardando respuesta...
-                </span>
-            ) : (
-                <span className="text-xs text-green-600 flex items-center">
-                     <span className="w-2 h-2 bg-green-500 rounded-full mr-2"></span>
-                     Guardado
-                </span>
-            )}
+          {isSaving ? (
+            <span className="text-xs text-amber-600 animate-pulse flex items-center">
+              <span className="w-2 h-2 bg-amber-500 rounded-full mr-2"></span>
+              Guardando respuesta...
+            </span>
+          ) : (
+            <span className="text-xs text-green-600 flex items-center">
+              <span className="w-2 h-2 bg-green-500 rounded-full mr-2"></span>
+              Guardado
+            </span>
+          )}
         </div>
       </div>
 
