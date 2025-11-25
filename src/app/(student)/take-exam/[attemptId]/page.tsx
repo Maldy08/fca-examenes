@@ -1,7 +1,6 @@
-
-import ExamUI from "@/components/exam-taker/ExamUI";
 import { getExamAttempt } from "@/lib/data-fetch";
-import { notFound } from "next/navigation";
+import ExamUI, { ExamItem } from "@/components/exam-taker/ExamUI";
+import { notFound, redirect } from "next/navigation"; // Importar redirect
 
 interface PageProps {
   params: Promise<{
@@ -9,20 +8,59 @@ interface PageProps {
   }>;
 }
 
-export default async function TakeExamPage({ params }: PageProps) {
-  // 1. Esperamos a tener el ID de la URL
-  const { attemptId } = await params;
-
-  // 2. Obtenemos los datos REALES directamente de la BD (Server-side)
-  // (Esta función ya trae las preguntas en mayúsculas MULTIPLE_CHOICE)
-  const attempt = await getExamAttempt(attemptId);
-
-  // 3. Si el intento no existe (URL inválida), mostramos 404
-  if (!attempt) {
-    return notFound();
+// 1. FUNCIÓN HELPER PARA MEZCLAR (Algoritmo Fisher-Yates)
+function shuffleArray<T>(array: T[]): T[] {
+  const newArray = [...array];
+  for (let i = newArray.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [newArray[i], newArray[j]] = [newArray[j], newArray[i]];
   }
+  return newArray;
+}
 
-  // 4. Renderizamos la UI pasándole los datos reales
-  // Aquí es donde conectamos con el componente que arreglaste antes
-  return <ExamUI attemptData={attempt} />;
+// OBLIGAMOS A QUE ESTA PÁGINA NO SE GUARDE EN CACHÉ
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
+export default async function TakeExamPage({ params }: PageProps) {
+  const { attemptId } = await params;
+  const attempt = await getExamAttempt(attemptId);
+  
+
+  if (!attempt) return notFound();
+
+  // --- CANDADO DE SEGURIDAD 🔒 ---
+  // Si el examen ya se terminó (por tiempo, por strikes o manual), lo sacamos.
+  if (attempt.status === 'completed') {
+    redirect(`/boleta/${attempt.id}`); // O /finished si usaste esa
+  }
+  // ------------------------------
+
+  // 2. PREPARAR ITEMS PARA EL EXAMEN (MEZCLA)
+  
+  // A) Preguntas Sueltas
+  const looseQuestions = attempt.exam.questions || [];
+  const looseItems: ExamItem[] = looseQuestions.map(q => ({
+    type: 'question',
+    data: q
+  }));
+
+  // B) Grupos (Casos)
+  // @ts-ignore - Prisma types might be lagging
+  const groups = attempt.exam.questionGroups || [];
+  const groupItems: ExamItem[] = groups.map((g: any) => ({
+    type: 'group',
+    data: {
+      ...g,
+      // Barajamos las preguntas DENTRO del grupo
+      questions: shuffleArray(g.questions)
+    }
+  }));
+
+  // C) Mezclar todo junto
+  const allItems = [...looseItems, ...groupItems];
+  const shuffledItems = shuffleArray(allItems);
+
+  // Pasamos 'attempt' y los 'items' ya procesados
+  return <ExamUI attemptData={attempt} items={shuffledItems} />;
 }

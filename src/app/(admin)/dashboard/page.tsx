@@ -1,8 +1,26 @@
 import Link from "next/link";
-import { getAllExams } from "@/lib/data-fetch";
+import { getAllExams, getExamsByTeacher } from "@/lib/data-fetch";
+import { currentUser } from "@clerk/nextjs/server";
+import { db } from "@/lib/db";
 
 export default async function DashboardPage() {
-  const exams = await getAllExams();
+  
+  const user = await currentUser();
+  const email = user?.emailAddresses[0].emailAddress;
+
+  let dbUser = await db.user.findUnique({ where: { email } });
+  
+if (!dbUser) {
+    dbUser = await db.user.create({
+      data: {
+        email : email!,
+        name: `${user?.firstName} ${user?.lastName}`,
+        role: "ADMIN"
+      }
+    });
+  }
+
+  const exams = await getExamsByTeacher(dbUser?.id!);
 
   return (
     <div className="max-w-6xl mx-auto p-8">

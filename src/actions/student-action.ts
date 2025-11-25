@@ -3,6 +3,17 @@
 import { db } from "@/lib/db";
 import { revalidatePath } from "next/cache";
 
+
+// ... imports
+
+export async function checkExamStatusAction(attemptId: string) {
+  const attempt = await db.examAttempt.findUnique({
+    where: { id: attemptId },
+    select: { status: true }
+  });
+  return attempt?.status;
+}
+
 export async function saveAnswerAction(
   attemptId: string,
   questionId: string,
@@ -118,4 +129,21 @@ export async function finishExamAction(attemptId: string) {
 function isUUID(str: string) {
   const regex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
   return regex.test(str);
+}
+
+export async function logWarningAction(attemptId: string) {
+  try {
+    const updatedAttempt = await db.examAttempt.update({
+      where: { id: attemptId },
+      data: {
+        warnings: { increment: 1 }
+      },
+      select: { warnings: true } // 👈 IMPORTANTE: Pedimos que nos devuelva el dato
+    });
+
+    return { success: true, warnings: updatedAttempt.warnings }; // 👈 Lo retornamos al cliente
+  } catch (error) {
+    console.error("Error logging warning:", error);
+    return { success: false, warnings: 0 };
+  }
 }

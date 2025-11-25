@@ -1,45 +1,56 @@
 "use client";
 
+import { logWarningAction } from "@/actions/student-action";
 import { useEffect } from "react";
-import { logWarningAction } from "@/actions/student-actions";
 
-export default function ProctoringMonitor({ attemptId }: { attemptId: string }) {
-    useEffect(() => {
-        // 1. Detectar cambio de pestaña/ventana
-        const handleVisibilityChange = () => {
-            if (document.hidden) {
-                // El usuario se fue de la pestaña
-                logWarningAction(attemptId);
-                // Opcional: alert("⚠️ Se ha registrado una falta por salir del examen.");
-            }
-        };
 
-        // 2. Bloquear clic derecho
-        const handleContextMenu = (e: MouseEvent) => {
-            e.preventDefault();
-        };
+// Agregamos una prop nueva: onKickOut
+export default function ProctoringMonitor({ 
+  attemptId, 
+  onKickOut 
+}: { 
+  attemptId: string;
+  onKickOut: () => void; // Función que el padre nos pasará
+}) {
+  
+  useEffect(() => {
+    const handleVisibilityChange = async () => {
+      if (document.hidden) {
+        // 1. Registramos la falta y esperamos la respuesta del servidor
+        const result = await logWarningAction(attemptId);
+        
+        // 2. Verificamos si llegamos al límite (3 strikes)
+        if (result.success && result.warnings >= 3) {
+            // 💀 EJECUTAMOS LA EXPULSIÓN
+            onKickOut();
+        } else {
+            // Solo advertencia leve
+            // (Opcional: podrías mostrar un toast aquí diciendo "Llevas X faltas")
+            console.log(`Advertencia registrada. Total: ${result.warnings}`);
+        }
+      }
+    };
 
-        // 3. Bloquear copiar/pegar
-        const handleCopyCutPaste = (e: ClipboardEvent) => {
-            e.preventDefault();
-        };
+    const handleContextMenu = (e: MouseEvent) => e.preventDefault();
+    const handleCopy = (e: ClipboardEvent) => {
+        e.preventDefault();
+        alert("Copiar/Pegar está deshabilitado. Esto podría contar como falta.");
+    }
 
-        // Agregar listeners
-        document.addEventListener("visibilitychange", handleVisibilityChange);
-        document.addEventListener("contextmenu", handleContextMenu);
-        document.addEventListener("copy", handleCopyCutPaste);
-        document.addEventListener("cut", handleCopyCutPaste);
-        document.addEventListener("paste", handleCopyCutPaste);
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    document.addEventListener("contextmenu", handleContextMenu);
+    document.addEventListener("copy", handleCopy);
+    document.addEventListener("cut", handleCopy);
+    document.addEventListener("paste", handleCopy);
 
-        // Cleanup al desmontar
-        return () => {
-            document.removeEventListener("visibilitychange", handleVisibilityChange);
-            document.removeEventListener("contextmenu", handleContextMenu);
-            document.removeEventListener("copy", handleCopyCutPaste);
-            document.removeEventListener("cut", handleCopyCutPaste);
-            document.removeEventListener("paste", handleCopyCutPaste);
-        };
-    }, [attemptId]);
+    return () => {
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+      document.removeEventListener("contextmenu", handleContextMenu);
+      document.removeEventListener("copy", handleCopy);
+      document.removeEventListener("cut", handleCopy);
+      document.removeEventListener("paste", handleCopy);
+    };
+  }, [attemptId, onKickOut]);
 
-    return null; // Componente invisible
+  return null;
 }

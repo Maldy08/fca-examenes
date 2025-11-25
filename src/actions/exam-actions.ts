@@ -4,31 +4,42 @@ import { db } from "@/lib/db";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { QuestionType } from "@prisma/client";
+import { currentUser } from "@clerk/nextjs/server";
 
-// 1. Crear el Examen (Solo cabecera)
 export async function createExamAction(formData: FormData) {
   const title = formData.get("title") as string;
   const description = formData.get("description") as string;
   const accessCode = formData.get("accessCode") as string;
+  const timeLimit = formData.get("timeLimit") as string;
+  
+  // 1. OBTENER USUARIO ACTUAL DE CLERK
+  const clerkUser = await currentUser();
+  
+  if (!clerkUser || !clerkUser.emailAddresses[0]) {
+      throw new Error("No autorizado");
+  }
+  const email = clerkUser.emailAddresses[0].emailAddress;
 
-  // OJO: Aquí deberíamos sacar el ID del usuario logueado real.
-  // Por ahora, buscamos a tu usuario admin "hardcodeado" o creamos uno temporal
-  // En un futuro integrarás Auth real (Clerk/NextAuth)
-  const user = await db.user.findFirst({ where: { role: "ADMIN" } });
+  // 2. BUSCAR SU ID EN NUESTRA BASE DE DATOS
+  const dbUser = await db.user.findUnique({
+      where: { email: email }
+  });
 
-  if (!user) throw new Error("No hay usuario Admin para asignar el examen");
+  if (!dbUser) throw new Error("Usuario no encontrado en base de datos");
 
+  // 3. CREAR EL EXAMEN ASIGNADO A ÉL
   const exam = await db.exam.create({
     data: {
       title,
       description,
       accessCode,
-      createdById: user.id,
-      isActive: false, // Nace como borrador
+      createdById: dbUser.id, // <--- AQUÍ ESTÁ LA CLAVE
+      isActive: false,
+      timeLimitMin: Number(timeLimit) > 0 ? Number(timeLimit) : null, // Guardar en BD
     },
   });
 
-  redirect(`/exams/${exam.id}/edit`); // Nos lleva directo a agregar preguntas
+  redirect(`/exams/${exam.id}/edit`);
 }
 
 // 2. Agregar una Pregunta al Examen
@@ -37,7 +48,8 @@ export async function addQuestionAction(
   type: QuestionType,
   content: string,
   points: number,
-  optionsData?: { text: string, isCorrect: boolean }[]
+  optionsData?: { text: string, isCorrect: boolean }[],
+  groupId?: string // <--- NUEVO PARAMETRO
 ) {
 
   await db.question.create({
@@ -46,6 +58,7 @@ export async function addQuestionAction(
       content,
       type,
       points,
+      groupId, // <--- CONECTAR AL GRUPO SI EXISTE
       options: optionsData ? {
         create: optionsData
       } : undefined
@@ -77,5 +90,31 @@ export async function deleteQuestionAction(questionId: string, examId: string) {
     return { success: true };
   } catch (error) {
     return { success: false, error: "No se pudo eliminar la pregunta" };
+  }
+}
+
+// --- NUEVAS ACCIONES PARA CASOS DE ESTUDIO ---
+
+export async function createGroupAction(examId: string, title: string, content: string) {
+  await db.questionGroup.create({
+    data: {
+      examId,
+      title,
+      content
+    }
+  });
+  revalidatePath(`/exams/${examId}/edit`);
+  return { success: true };
+}
+
+export async function deleteGroupAction(groupId: string, examId: string) {
+  try {
+    await db.questionGroup.delete({
+      where: { id: groupId }
+    });
+    revalidatePath(`/exams/${examId}/edit`);
+    return { success: true };
+  } catch (error) {
+    return { success: false, error: "No se pudo eliminar el grupo" };
   }
 }

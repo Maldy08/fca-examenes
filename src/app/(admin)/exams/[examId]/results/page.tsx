@@ -1,3 +1,4 @@
+import ExportExcelButton from "@/components/admin/ExportExcelButton";
 import { getExamResults, getExamDetails } from "@/lib/data-fetch";
 import Link from "next/link";
 
@@ -28,9 +29,7 @@ export default async function ExamResultsPage({ params }: Props) {
           <Link href="/dashboard" className="text-gray-600 hover:underline">
             Volver al Dashboard
           </Link>
-          <button className="bg-uabc-button-green text-white px-4 py-2 rounded hover:bg-uabc-green">
-            Exportar Excel
-          </button>
+          <ExportExcelButton results={results} examTitle={exam.title} />
         </div>
       </div>
 

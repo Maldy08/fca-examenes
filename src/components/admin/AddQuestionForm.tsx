@@ -2,9 +2,9 @@
 
 import { useState } from "react";
 import { addQuestionAction } from "@/actions/exam-actions";
-import { QuestionType } from "@prisma/client"; // Asegúrate de importar los tipos
+import { QuestionType } from "@prisma/client";
 
-export default function AddQuestionForm({ examId }: { examId: string }) {
+export default function AddQuestionForm({ examId, groupId }: { examId: string, groupId?: string }) {
   const [type, setType] = useState<QuestionType>("MULTIPLE_CHOICE");
   const [content, setContent] = useState("");
   const [points, setPoints] = useState(10);
@@ -20,7 +20,7 @@ export default function AddQuestionForm({ examId }: { examId: string }) {
     // Preparamos los datos
     const optionsData = type === "MULTIPLE_CHOICE" ? options : undefined;
 
-    await addQuestionAction(examId, type, content, points, optionsData);
+    await addQuestionAction(examId, type, content, points, optionsData, groupId);
     
     // Reset del formulario
     setContent("");

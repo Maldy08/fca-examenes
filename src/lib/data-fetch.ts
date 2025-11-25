@@ -8,12 +8,24 @@ export async function getExamAttempt(attemptId: string) {
       include: {
         exam: {
           include: {
+            // 1. Preguntas Sueltas
             questions: {
-              orderBy: { order: 'asc' }, // Ordenar preguntas
+              where: { groupId: null }, // Solo las que no tienen grupo
+              orderBy: { order: 'asc' },
               include: {
-                options: true, // Traer las opciones si es multiple choice
+                options: true,
               },
             },
+            // 2. Grupos de Preguntas (Casos)
+            questionGroups: {
+              include: {
+                questions: {
+                  orderBy: { order: 'asc' },
+                  include: { options: true }
+                }
+              },
+              orderBy: { order: 'asc' }
+            }
           },
         },
         answers: true, // Traer respuestas previas si ya contestó algo
@@ -65,6 +77,25 @@ export async function getExamResults(examId: string) {
       }
     });
     return results;
+  } catch (error) {
+    return [];
+  }
+}
+
+// Modifica esta función para que reciba un userId
+export async function getExamsByTeacher(userId: string) {
+  try {
+    return await db.exam.findMany({
+      where: {
+        createdById: userId // <--- EL FILTRO MÁGICO
+      },
+      orderBy: { title: 'asc' },
+      include: {
+        _count: {
+          select: { attempts: true }
+        }
+      }
+    });
   } catch (error) {
     return [];
   }

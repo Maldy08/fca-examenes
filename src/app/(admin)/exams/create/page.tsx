@@ -43,6 +43,17 @@ export default function CreateExamPage() {
             <p className="text-xs text-gray-500 mt-1">Los alumnos necesitarán este código para entrar.</p>
           </div>
 
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Límite de Tiempo (Minutos)</label>
+            <input
+              name="timeLimit"
+              type="number"
+              min="0"
+              placeholder="Ej. 60 (Deja 0 para sin límite)"
+              className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-uabc-green outline-none"
+            />
+          </div>
+
           <button
             type="submit"
             className="w-full bg-uabc-button-green text-white py-3 rounded-lg font-medium hover:bg-uabc-green transition-colors"
