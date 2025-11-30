@@ -92,6 +92,17 @@ export default function QuestionCard({
         <h2 className="text-xl font-semibold text-gray-800 leading-snug">
           {question.content}
         </h2>
+
+        {question.imageUrl && (
+            <div className="mt-4 mb-2">
+                <img 
+                    src={question.imageUrl} 
+                    alt="Material de apoyo" 
+                    className="rounded-lg border border-gray-200 shadow-sm max-h-[300px] w-auto object-contain bg-white"
+                />
+            </div>
+        )}
+        
         <div className="mt-2 h-4 flex items-center">
           {isSaving ? (
             <span className="text-xs text-amber-600 animate-pulse flex items-center">

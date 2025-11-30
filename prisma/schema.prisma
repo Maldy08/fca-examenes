@@ -75,6 +75,7 @@ model Question {
   content String
   type    QuestionType
   points  Int          @default(1)
+  imageUrl    String?
   order   Int          @default(0)
 
   options Option[]

@@ -47,6 +47,15 @@ export default async function BoletaPage({ params }: PageProps) {
             </div>
           </div>
 
+          {/* --- NUEVO BOTÓN: Ver Revisión --- */}
+          <Link
+            href={`/review/${attempt.id}`}
+            className="block w-full py-3 mb-3 bg-white text-uabc-button-green border-2 border-uabc-button-green rounded-lg font-bold hover:bg-green-50 transition-colors shadow-sm"
+          >
+            Ver Examen Calificado 📝
+          </Link>
+          {/* --------------------------------- */}
+
           <Link
             href="/"
             className="block w-full py-3 bg-gray-900 text-white rounded-lg font-medium hover:bg-gray-800 transition-colors"

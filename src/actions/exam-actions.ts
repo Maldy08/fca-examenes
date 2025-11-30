@@ -49,7 +49,8 @@ export async function addQuestionAction(
   content: string,
   points: number,
   optionsData?: { text: string, isCorrect: boolean }[],
-  groupId?: string // <--- NUEVO PARAMETRO
+  groupId?: string, // <--- NUEVO PARAMETRO
+  imageUrl?: string
 ) {
 
   await db.question.create({
@@ -59,6 +60,7 @@ export async function addQuestionAction(
       type,
       points,
       groupId, // <--- CONECTAR AL GRUPO SI EXISTE
+      imageUrl,
       options: optionsData ? {
         create: optionsData
       } : undefined
