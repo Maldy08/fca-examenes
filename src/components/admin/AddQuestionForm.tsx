@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { addQuestionAction } from "@/actions/exam-actions";
 import { QuestionType } from "@prisma/client";
+import ImageUpload from "./ImageUpload";
 
 export default function AddQuestionForm({ examId, groupId }: { examId: string, groupId?: string }) {
     const [type, setType] = useState<QuestionType>("MULTIPLE_CHOICE");
@@ -21,7 +22,7 @@ export default function AddQuestionForm({ examId, groupId }: { examId: string, g
         // Preparamos los datos
         const optionsData = type === "MULTIPLE_CHOICE" ? options : undefined;
 
-        await addQuestionAction(examId, type, content, points, optionsData, groupId);
+        await addQuestionAction(examId, type, content, points, optionsData, groupId, imageUrl);
 
         // Reset del formulario
         setContent("");
@@ -116,28 +117,11 @@ export default function AddQuestionForm({ examId, groupId }: { examId: string, g
                     </div>
                 )}
 
-                <div className="bg-white p-4 rounded border border-gray-200">
-                    <label className="block text-xs font-bold text-gray-500 uppercase mb-2">
-                        Imagen de Apoyo (Opcional)
-                    </label>
-                    <div className="flex gap-2">
-                        <input
-                            type="text"
-                            value={imageUrl}
-                            onChange={(e) => setImageUrl(e.target.value)}
-                            placeholder="Pega aquí el enlace de la imagen (https://...)"
-                            className="flex-1 p-2 border rounded text-sm font-mono text-gray-600"
-                        />
-                        {imageUrl && (
-                            <div className="w-10 h-10 rounded border overflow-hidden bg-gray-100 relative">
-                                <img src={imageUrl} alt="Preview" className="w-full h-full object-cover" />
-                            </div>
-                        )}
-                    </div>
-                    <p className="text-[10px] text-gray-400 mt-1">
-                        Tip: Puedes usar imágenes de Google Drive, Imgur o la web.
-                    </p>
-                </div>
+                <ImageUpload
+                    onUploadComplete={(url) => {
+                        setImageUrl(url); // Guardamos la URL que nos devuelve Supabase
+                    }}
+                />
 
                 <button
                     type="submit"
