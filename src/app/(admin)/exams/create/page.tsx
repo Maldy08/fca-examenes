@@ -54,6 +54,28 @@ export default function CreateExamPage() {
             />
           </div>
 
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Fecha de Inicio (Opcional)</label>
+              <input 
+                name="startTime" 
+                type="datetime-local"
+                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-uabc-green outline-none text-gray-600"
+              />
+              <p className="text-[10px] text-gray-400 mt-1">Antes de esta hora, nadie podrá entrar.</p>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Fecha de Cierre (Opcional)</label>
+              <input 
+                name="endTime" 
+                type="datetime-local"
+                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-uabc-crimson outline-none text-gray-600"
+              />
+              <p className="text-[10px] text-gray-400 mt-1">A esta hora, el examen se cierra para todos.</p>
+            </div>
+          </div>
+
           <button
             type="submit"
             className="w-full bg-uabc-button-green text-white py-3 rounded-lg font-medium hover:bg-uabc-green transition-colors"

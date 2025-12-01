@@ -11,6 +11,14 @@ export async function createExamAction(formData: FormData) {
   const description = formData.get("description") as string;
   const accessCode = formData.get("accessCode") as string;
   const timeLimit = formData.get("timeLimit") as string;
+
+  const startTimeStr = formData.get("startTime") as string;
+  const endTimeStr = formData.get("endTime") as string;
+
+  // Convertir a objetos Date o null si están vacíos
+  const startTime = startTimeStr ? new Date(startTimeStr) : null;
+  const endTime = endTimeStr ? new Date(endTimeStr) : null;
+  
   
   // 1. OBTENER USUARIO ACTUAL DE CLERK
   const clerkUser = await currentUser();
@@ -36,6 +44,8 @@ export async function createExamAction(formData: FormData) {
       createdById: dbUser.id, // <--- AQUÍ ESTÁ LA CLAVE
       isActive: false,
       timeLimitMin: Number(timeLimit) > 0 ? Number(timeLimit) : null, // Guardar en BD
+      startTime,
+      endTime,
     },
   });
 

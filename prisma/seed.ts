@@ -1,86 +1,34 @@
-// prisma/seed.ts
 import { PrismaClient } from '@prisma/client'
 
 const prisma = new PrismaClient()
 
 async function main() {
-  console.log("🌱 Iniciando sembrado de datos...")
+  console.log("🌱 Iniciando lista blanca de docentes...")
 
-  // 1. Crear al Profesor (ADMIN)
-  const professor = await prisma.user.upsert({
-    where: { email: 'profe@uabc.edu.mx' },
-    update: {},
-    create: {
-      email: 'profe@uabc.edu.mx',
-      name: 'Profe CMALDONADO',
-      role: 'ADMIN',
-    },
-  })
+  // 👇 LISTA DE PROFESORES AUTORIZADOS
+  // Agrega aquí los correos de tus colegas
+  const authorizedTeachers = [
+    { email: 'carlos.maldonado.verdin@uabc.edu.mx', name: 'Profe. Carlos Maldonado' }, // <--- PON TU CORREO REAL AQUÍ
+    { email: 'camv29@gmail.com', name: 'Profe. Invitado' },
+  ];
 
-  console.log(`✅ Usuario creado: ${professor.name}`)
-
-  // 2. Crear el Examen de Bases de Datos
-  const exam = await prisma.exam.create({
-    data: {
-      title: 'Parcial 1: Fundamentos de SQL',
-      description: 'Evaluación práctica de consultas y teoría básica.',
-      accessCode: 'DB2025', 
-      createdById: professor.id,
-      isActive: true,
-      questions: {
-        create: [
-          {
-            content: '¿Qué comando SQL se utiliza para eliminar una tabla completa?',
-            type: 'MULTIPLE_CHOICE',
-            points: 10,
-            options: {
-              create: [
-                { text: 'DELETE TABLE', isCorrect: false },
-                { text: 'DROP TABLE', isCorrect: true },
-                { text: 'REMOVE TABLE', isCorrect: false },
-              ],
-            },
-          },
-          {
-            content: 'Escribe una consulta para obtener todos los empleados con salario > 5000.',
-            type: 'CODE_SQL',
-            points: 20,
-          },
-          {
-            content: 'Explica la diferencia entre Primary Key y Foreign Key.',
-            type: 'OPEN_TEXT',
-            points: 15,
-          },
-        ],
+  for (const teacher of authorizedTeachers) {
+    const user = await prisma.user.upsert({
+      where: { email: teacher.email },
+      update: { 
+        role: 'ADMIN', // Aseguramos que sea admin si ya existía
+        name: teacher.name // Actualizamos nombre si cambió
       },
-    },
-  })
+      create: {
+        email: teacher.email,
+        name: teacher.name,
+        role: 'ADMIN',
+      },
+    });
+    console.log(`✅ Acceso concedido a: ${user.email}`);
+  }
 
-  console.log(`✅ Examen creado: ${exam.title}`)
-
-  // 3. Crear un ESTUDIANTE de prueba y un INTENTO (Para que puedas entrar YA)
-  const student = await prisma.user.upsert({
-    where: { email: 'alumno@uabc.edu.mx' },
-    update: {},
-    create: {
-      email: 'alumno@uabc.edu.mx',
-      name: 'Alumno Prueba',
-      role: 'STUDENT',
-    },
-  })
-
-  const attempt = await prisma.examAttempt.create({
-    data: {
-      userId: student.id,
-      examId: exam.id,
-      startedAt: new Date(),
-    }
-  })
-
-  console.log("\n---------------------------------------------------")
-  console.log("🚀 ¡TODO LISTO! Entra a esta URL para probar tu examen:")
-  console.log(`http://localhost:3000/take-exam/${attempt.id}`)
-  console.log("---------------------------------------------------\n")
+  console.log("🔒 Sistema de seguridad actualizado.");
 }
 
 main()

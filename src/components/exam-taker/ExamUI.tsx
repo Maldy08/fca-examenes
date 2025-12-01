@@ -144,6 +144,7 @@ export default function ExamUI({ attemptData, items }: ExamUIProps) {
           <ExamTimer 
              startedAt={attemptData.startedAt} 
              timeLimitMin={attemptData.exam.timeLimitMin}
+             hardDeadline={attemptData.exam.endTime}
              onTimeUp={handleTimeUp}
           />
         ) : (

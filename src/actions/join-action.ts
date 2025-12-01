@@ -21,6 +21,24 @@ export async function joinExamAction(formData: FormData) {
     return { error: "Este examen aún no está activo." };
   }
 
+  const now = new Date();
+
+
+  // A) ¿Es muy temprano?
+  if (exam.startTime && now < exam.startTime) {
+    return { 
+      error: `El examen comienza el ${exam.startTime.toLocaleString('es-MX')}.` 
+    };
+  }
+
+  // B) ¿Es muy tarde?
+  if (exam.endTime && now > exam.endTime) {
+    return { 
+      error: `Este examen cerró el ${exam.endTime.toLocaleString('es-MX')}. Ya no puedes ingresar.` 
+    };
+  }
+  
+
   // 2. Buscar o Crear al Estudiante
   // (Upsert: Si existe lo actualiza, si no, lo crea)
   const student = await db.user.upsert({
