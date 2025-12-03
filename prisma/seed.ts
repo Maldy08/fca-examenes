@@ -10,6 +10,8 @@ async function main() {
   const authorizedTeachers = [
     { email: 'carlos.maldonado.verdin@uabc.edu.mx', name: 'Profe. Carlos Maldonado' }, // <--- PON TU CORREO REAL AQUÍ
     { email: 'camv29@gmail.com', name: 'Profe. Invitado' },
+    { email : 'claudia@uabc.edu.mx', name: 'Profe. Claudia' },
+    
   ];
 
   for (const teacher of authorizedTeachers) {
