@@ -1,6 +1,7 @@
 import { db } from "@/lib/db";
 import Link from "next/link";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
+import { getStudentIdFromSession } from "@/lib/student-session";
 
 interface PageProps {
   params: Promise<{ id: string }>;
@@ -8,9 +9,17 @@ interface PageProps {
 
 export default async function BoletaPage({ params }: PageProps) {
   const { id } = await params; // Desempaquetamos el ID
+  const studentId = await getStudentIdFromSession();
 
-  const attempt = await db.examAttempt.findUnique({
-    where: { id: id },
+  if (!studentId) {
+    redirect("/");
+  }
+
+  const attempt = await db.examAttempt.findFirst({
+    where: {
+      id: id,
+      userId: studentId,
+    },
     include: {
       exam: true,
       user: true,

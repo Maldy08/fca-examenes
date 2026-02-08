@@ -2,6 +2,7 @@ import { getExamAttempt } from "@/lib/data-fetch";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import ReviewCard from "@/components/exam-taker/ReviewCard";
+import { getStudentIdFromSession } from "@/lib/student-session";
 
 interface PageProps {
   params: Promise<{ attemptId: string }>;
@@ -9,7 +10,10 @@ interface PageProps {
 
 export default async function ReviewExamPage({ params }: PageProps) {
   const { attemptId } = await params;
-  const attempt = await getExamAttempt(attemptId);
+  const studentId = await getStudentIdFromSession();
+  if (!studentId) return redirect("/");
+
+  const attempt = await getExamAttempt(attemptId, studentId);
 
   if (!attempt) return notFound();
 

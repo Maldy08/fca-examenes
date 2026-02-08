@@ -1,6 +1,7 @@
 import GradingCard from "@/components/admin/GradingCard";
 import { db } from "@/lib/db";
 import Link from "next/link";
+import { requireAdminUser } from "@/lib/auth";
 // Crearemos este componente en el paso 3
 
 interface PageProps {
@@ -13,9 +14,18 @@ interface PageProps {
 
 export default async function ReviewExamPage({ params }: PageProps) {
   const { examId, attemptId } = await params;
+  const adminUser = await requireAdminUser();
   // 1. Obtener el intento con TODA la información (Preguntas, Opciones, Respuestas del Alumno)
-  const attempt = await db.examAttempt.findUnique({
-    where: { id: attemptId },
+  const attempt = await db.examAttempt.findFirst({
+    where: {
+      id: attemptId,
+      examId,
+      exam: {
+        is: {
+          createdById: adminUser.id,
+        },
+      },
+    },
     include: {
       user: true,
       answers: true,

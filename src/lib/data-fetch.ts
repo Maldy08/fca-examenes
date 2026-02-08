@@ -1,10 +1,13 @@
 import { db } from "@/lib/db";
 
 // 1. PARA EL ALUMNO: Obtener un intento de examen específico
-export async function getExamAttempt(attemptId: string) {
+export async function getExamAttempt(attemptId: string, userId?: string) {
   try {
-    const attempt = await db.examAttempt.findUnique({
-      where: { id: attemptId },
+    const attempt = await db.examAttempt.findFirst({
+      where: {
+        id: attemptId,
+        ...(userId ? { userId } : {}),
+      },
       include: {
         exam: {
           include: {
@@ -32,7 +35,7 @@ export async function getExamAttempt(attemptId: string) {
       },
     });
     return attempt;
-  } catch (error) {
+  } catch {
     return null;
   }
 }
@@ -48,25 +51,40 @@ export async function getAllExams() {
         }
       }
     });
-  } catch (error) {
+  } catch {
     return [];
   }
 }
 
 // 3. PARA EL ADMIN: Obtener detalles de un examen (Título, etc.)
-export async function getExamDetails(examId: string) {
+export async function getExamDetails(examId: string, ownerId?: string) {
   try {
-    return await db.exam.findUnique({
-      where: { id: examId }
+    return await db.exam.findFirst({
+      where: {
+        id: examId,
+        ...(ownerId ? { createdById: ownerId } : {}),
+      },
     });
-  } catch (error) {
+  } catch {
     return null;
   }
 }
 
 // 4. PARA EL ADMIN: Ver resultados de todos los alumnos en un examen
-export async function getExamResults(examId: string) {
+export async function getExamResults(examId: string, ownerId?: string) {
   try {
+    if (ownerId) {
+      const exam = await db.exam.findFirst({
+        where: {
+          id: examId,
+          createdById: ownerId,
+        },
+        select: { id: true },
+      });
+
+      if (!exam) return [];
+    }
+
     const results = await db.examAttempt.findMany({
       where: { examId: examId },
       include: {
@@ -77,7 +95,7 @@ export async function getExamResults(examId: string) {
       }
     });
     return results;
-  } catch (error) {
+  } catch {
     return [];
   }
 }
@@ -96,7 +114,7 @@ export async function getExamsByTeacher(userId: string) {
         }
       }
     });
-  } catch (error) {
+  } catch {
     return [];
   }
 }

@@ -4,7 +4,20 @@ import { db } from "@/lib/db";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { QuestionType } from "@prisma/client";
-import { currentUser } from "@clerk/nextjs/server";
+import { requireAdminUser } from "@/lib/auth";
+
+async function assertExamOwnership(examId: string, userId: string) {
+  const exam = await db.exam.findUnique({
+    where: { id: examId },
+    select: { id: true, createdById: true },
+  });
+
+  if (!exam || exam.createdById !== userId) {
+    throw new Error("No autorizado");
+  }
+
+  return exam;
+}
 
 export async function createExamAction(formData: FormData) {
   const title = formData.get("title") as string;
@@ -20,20 +33,7 @@ export async function createExamAction(formData: FormData) {
   const endTime = endTimeStr ? new Date(endTimeStr) : null;
   
   
-  // 1. OBTENER USUARIO ACTUAL DE CLERK
-  const clerkUser = await currentUser();
-  
-  if (!clerkUser || !clerkUser.emailAddresses[0]) {
-      throw new Error("No autorizado");
-  }
-  const email = clerkUser.emailAddresses[0].emailAddress;
-
-  // 2. BUSCAR SU ID EN NUESTRA BASE DE DATOS
-  const dbUser = await db.user.findUnique({
-      where: { email: email }
-  });
-
-  if (!dbUser) throw new Error("Usuario no encontrado en base de datos");
+  const dbUser = await requireAdminUser();
 
   // 3. CREAR EL EXAMEN ASIGNADO A ÉL
   const exam = await db.exam.create({
@@ -62,6 +62,19 @@ export async function addQuestionAction(
   groupId?: string, // <--- NUEVO PARAMETRO
   imageUrl?: string
 ) {
+  const adminUser = await requireAdminUser();
+  await assertExamOwnership(examId, adminUser.id);
+
+  if (groupId) {
+    const group = await db.questionGroup.findUnique({
+      where: { id: groupId },
+      select: { examId: true },
+    });
+
+    if (!group || group.examId !== examId) {
+      throw new Error("Grupo inválido");
+    }
+  }
 
   await db.question.create({
     data: {
@@ -83,6 +96,9 @@ export async function addQuestionAction(
 
 // 3. Activar/Publicar Examen
 export async function toggleExamStatusAction(examId: string, isActive: boolean) {
+  const adminUser = await requireAdminUser();
+  await assertExamOwnership(examId, adminUser.id);
+
   await db.exam.update({
     where: { id: examId },
     data: { isActive }
@@ -93,6 +109,18 @@ export async function toggleExamStatusAction(examId: string, isActive: boolean) 
 
 export async function deleteQuestionAction(questionId: string, examId: string) {
   try {
+    const adminUser = await requireAdminUser();
+    await assertExamOwnership(examId, adminUser.id);
+
+    const question = await db.question.findUnique({
+      where: { id: questionId },
+      select: { examId: true },
+    });
+
+    if (!question || question.examId !== examId) {
+      return { success: false, error: "Pregunta inválida para este examen" };
+    }
+
     await db.question.delete({
       where: { id: questionId }
     });
@@ -100,7 +128,7 @@ export async function deleteQuestionAction(questionId: string, examId: string) {
     // Recargamos la página de edición para que desaparezca la pregunta de la lista
     revalidatePath(`/exams/${examId}/edit`);
     return { success: true };
-  } catch (error) {
+  } catch {
     return { success: false, error: "No se pudo eliminar la pregunta" };
   }
 }
@@ -108,6 +136,9 @@ export async function deleteQuestionAction(questionId: string, examId: string) {
 // --- NUEVAS ACCIONES PARA CASOS DE ESTUDIO ---
 
 export async function createGroupAction(examId: string, title: string, content: string) {
+  const adminUser = await requireAdminUser();
+  await assertExamOwnership(examId, adminUser.id);
+
   await db.questionGroup.create({
     data: {
       examId,
@@ -121,12 +152,24 @@ export async function createGroupAction(examId: string, title: string, content: 
 
 export async function deleteGroupAction(groupId: string, examId: string) {
   try {
+    const adminUser = await requireAdminUser();
+    await assertExamOwnership(examId, adminUser.id);
+
+    const group = await db.questionGroup.findUnique({
+      where: { id: groupId },
+      select: { examId: true },
+    });
+
+    if (!group || group.examId !== examId) {
+      return { success: false, error: "Grupo inválido para este examen" };
+    }
+
     await db.questionGroup.delete({
       where: { id: groupId }
     });
     revalidatePath(`/exams/${examId}/edit`);
     return { success: true };
-  } catch (error) {
+  } catch {
     return { success: false, error: "No se pudo eliminar el grupo" };
   }
 }

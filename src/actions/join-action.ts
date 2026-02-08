@@ -2,6 +2,7 @@
 
 import { db } from "@/lib/db";
 import { redirect } from "next/navigation";
+import { setStudentSession } from "@/lib/student-session";
 
 export async function joinExamAction(formData: FormData) {
   const email = formData.get("email") as string;
@@ -62,6 +63,7 @@ export async function joinExamAction(formData: FormData) {
   });
 
   if (existingAttempt) {
+    await setStudentSession(student.id);
     redirect(`/take-exam/${existingAttempt.id}`);
   }
 
@@ -75,6 +77,7 @@ export async function joinExamAction(formData: FormData) {
   });
 
 if (completedAttempt) {
+      await setStudentSession(student.id);
       // --- CAMBIO AQUÍ ---
       // Antes: return { error: "Ya has completado este examen." };
       // Ahora: Lo redirigimos a su boleta de resultados
@@ -91,5 +94,6 @@ if (completedAttempt) {
     },
   });
 
+  await setStudentSession(student.id);
   redirect(`/take-exam/${newAttempt.id}`);
 }

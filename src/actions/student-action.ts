@@ -2,13 +2,20 @@
 
 import { db } from "@/lib/db";
 import { revalidatePath } from "next/cache";
+import { getStudentIdFromSession } from "@/lib/student-session";
 
 
 // ... imports
 
 export async function checkExamStatusAction(attemptId: string) {
-  const attempt = await db.examAttempt.findUnique({
-    where: { id: attemptId },
+  const studentId = await getStudentIdFromSession();
+  if (!studentId) return null;
+
+  const attempt = await db.examAttempt.findFirst({
+    where: {
+      id: attemptId,
+      userId: studentId,
+    },
     select: { status: true }
   });
   return attempt?.status;
@@ -20,6 +27,30 @@ export async function saveAnswerAction(
   answerText: string
 ) {
   try {
+    const studentId = await getStudentIdFromSession();
+    if (!studentId) return { success: false };
+
+    const attempt = await db.examAttempt.findFirst({
+      where: {
+        id: attemptId,
+        userId: studentId,
+        status: "in_progress",
+      },
+      select: { examId: true },
+    });
+
+    if (!attempt) return { success: false };
+
+    const question = await db.question.findFirst({
+      where: {
+        id: questionId,
+        examId: attempt.examId,
+      },
+      select: { id: true },
+    });
+
+    if (!question) return { success: false };
+
     // 1. Buscamos si ya existe una respuesta para actualizarla, o creamos una nueva
     // Usamos UPSERT (Update + Insert)
     await db.answer.upsert({
@@ -56,9 +87,16 @@ export async function saveAnswerAction(
 
 export async function finishExamAction(attemptId: string) {
   try {
+    const studentId = await getStudentIdFromSession();
+    if (!studentId) return { success: false };
+
     // 1. Traer el intento con las respuestas y las preguntas originales (para ver cuál era la correcta)
-    const attempt = await db.examAttempt.findUnique({
-      where: { id: attemptId },
+    const attempt = await db.examAttempt.findFirst({
+      where: {
+        id: attemptId,
+        userId: studentId,
+        status: "in_progress",
+      },
       include: {
         exam: {
           include: {
@@ -133,15 +171,28 @@ function isUUID(str: string) {
 
 export async function logWarningAction(attemptId: string) {
   try {
-    const updatedAttempt = await db.examAttempt.update({
-      where: { id: attemptId },
+    const studentId = await getStudentIdFromSession();
+    if (!studentId) return { success: false, warnings: 0 };
+
+    const result = await db.examAttempt.updateMany({
+      where: {
+        id: attemptId,
+        userId: studentId,
+        status: "in_progress",
+      },
       data: {
         warnings: { increment: 1 }
-      },
-      select: { warnings: true } // 👈 IMPORTANTE: Pedimos que nos devuelva el dato
+      }
     });
 
-    return { success: true, warnings: updatedAttempt.warnings }; // 👈 Lo retornamos al cliente
+    if (result.count === 0) return { success: false, warnings: 0 };
+
+    const updatedAttempt = await db.examAttempt.findUnique({
+      where: { id: attemptId },
+      select: { warnings: true },
+    });
+
+    return { success: true, warnings: updatedAttempt?.warnings ?? 0 }; // 👈 Lo retornamos al cliente
   } catch (error) {
     console.error("Error logging warning:", error);
     return { success: false, warnings: 0 };

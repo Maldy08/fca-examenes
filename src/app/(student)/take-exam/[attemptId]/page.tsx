@@ -1,6 +1,7 @@
 import { getExamAttempt } from "@/lib/data-fetch";
 import ExamUI, { ExamItem } from "@/components/exam-taker/ExamUI";
 import { notFound, redirect } from "next/navigation"; // Importar redirect
+import { getStudentIdFromSession } from "@/lib/student-session";
 
 interface PageProps {
   params: Promise<{
@@ -24,7 +25,10 @@ export const revalidate = 0;
 
 export default async function TakeExamPage({ params }: PageProps) {
   const { attemptId } = await params;
-  const attempt = await getExamAttempt(attemptId);
+  const studentId = await getStudentIdFromSession();
+  if (!studentId) return redirect("/");
+
+  const attempt = await getExamAttempt(attemptId, studentId);
   
 
   if (!attempt) return notFound();
@@ -46,9 +50,8 @@ export default async function TakeExamPage({ params }: PageProps) {
   }));
 
   // B) Grupos (Casos)
-  // @ts-ignore - Prisma types might be lagging
   const groups = attempt.exam.questionGroups || [];
-  const groupItems: ExamItem[] = groups.map((g: any) => ({
+  const groupItems: ExamItem[] = groups.map((g) => ({
     type: 'group',
     data: {
       ...g,

@@ -1,7 +1,10 @@
 import { createExamAction } from "@/actions/exam-actions";
 import Link from "next/link";
+import { requireAdminUser } from "@/lib/auth";
 
-export default function CreateExamPage() {
+export default async function CreateExamPage() {
+  await requireAdminUser();
+
   return (
     <div className="max-w-2xl mx-auto p-8">
       <Link href="/dashboard" className="text-sm text-gray-500 hover:text-uabc-button-green mb-6 block">

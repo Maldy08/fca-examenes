@@ -1,11 +1,12 @@
 import { db } from "@/lib/db";
 import Link from "next/link";
 // Componente Cliente (Paso 4)
-import { toggleExamStatusAction, deleteGroupAction } from "@/actions/exam-actions";
+import { toggleExamStatusAction } from "@/actions/exam-actions";
 import AddQuestionForm from "@/components/admin/AddQuestionForm";
 import DeleteQuestionButton from "@/components/admin/DeleteQuestionButton";
 import AddCaseStudyForm from "@/components/admin/AddCaseStudyForm";
 import DeleteGroupButton from "@/components/admin/DeleteGroupButton";
+import { requireAdminUser } from "@/lib/auth";
 
 
 interface Props {
@@ -14,9 +15,13 @@ interface Props {
 
 export default async function EditExamPage({ params }: Props) {
   const { examId } = await params;
+  const adminUser = await requireAdminUser();
 
-  const exam = await db.exam.findUnique({
-    where: { id: examId },
+  const exam = await db.exam.findFirst({
+    where: {
+      id: examId,
+      createdById: adminUser.id,
+    },
     include: {
       questionGroups: {
         include: {

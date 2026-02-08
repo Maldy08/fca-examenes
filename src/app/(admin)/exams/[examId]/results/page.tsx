@@ -1,6 +1,7 @@
 import ExportExcelButton from "@/components/admin/ExportExcelButton";
 import { getExamResults, getExamDetails } from "@/lib/data-fetch";
 import Link from "next/link";
+import { requireAdminUser } from "@/lib/auth";
 
 interface Props {
   params: Promise<{
@@ -11,9 +12,10 @@ interface Props {
 export default async function ExamResultsPage({ params }: Props) {
   // Ejecutamos las dos consultas en paralelo para que cargue más rápido
   const { examId } = await params;
+  const adminUser = await requireAdminUser();
   const [exam, results] = await Promise.all([
-    getExamDetails(examId),  // <--- Aquí usamos la variable limpia
-    getExamResults(examId)
+    getExamDetails(examId, adminUser.id),  // <--- Aquí usamos la variable limpia
+    getExamResults(examId, adminUser.id)
   ]);
   if (!exam) return <div>Examen no encontrado</div>;
 
