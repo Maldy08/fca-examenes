@@ -1,18 +1,30 @@
 import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
+import { NextResponse } from "next/server";
 
 // Definimos qué rutas son privadas (Solo docentes)
-// Protegemos todo lo que empiece con /dashboard o /exams
-const isProtectedRoute = createRouteMatcher([
-  '/dashboard(.*)', 
+const isTeacherRoute = createRouteMatcher([
+  '/dashboard(.*)',
   '/exams(.*)'
 ]);
 
+// Definimos qué rutas son de estudiantes
+const isStudentRoute = createRouteMatcher([
+  '/take-exam(.*)',
+  '/boleta(.*)'
+]);
+
 export default clerkMiddleware(async (auth, req) => {
-  if (isProtectedRoute(req)) {
+  if (isTeacherRoute(req)) {
     await auth.protect();
   }
-});
 
+  if (isStudentRoute(req)) {
+    const studentSession = req.cookies.get("student_session");
+    if (!studentSession?.value) {
+      return NextResponse.redirect(new URL('/', req.url));
+    }
+  }
+});
 export const config = {
   matcher: [
     // Skip Next.js internals and all static files, unless found in search params

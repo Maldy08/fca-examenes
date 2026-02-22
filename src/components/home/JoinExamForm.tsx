@@ -1,32 +1,33 @@
 "use client";
 
-import { useState } from "react";
+import { useActionState } from "react";
+import { useFormStatus } from "react-dom";
 import { joinExamAction } from "@/actions/join-action";
 
-export default function JoinExamForm() {
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  const handleSubmit = async (formData: FormData) => {
-    setIsLoading(true);
-    setError(null);
-
-    // Llamamos a la Server Action
-    const result = await joinExamAction(formData);
-
-    // Si la acción retorna algo (solo retorna si hay error, si no, hace redirect)
-    if (result?.error) {
-      setError(result.error);
-      setIsLoading(false);
-    }
-    // Si no hay error, el redirect del server action nos llevará al examen
-  };
+// Componente separado para el botón para poder usar useFormStatus
+function SubmitButton() {
+  const { pending } = useFormStatus();
 
   return (
-    <form action={handleSubmit} className="space-y-4">
-      {error && (
+    <button
+      type="submit"
+      disabled={pending}
+      className="w-full bg-uabc-button-green text-white py-3 rounded-lg font-bold hover:bg-uabc-green transition-transform active:scale-[0.98] disabled:opacity-70 disabled:cursor-not-allowed shadow-md shadow-uabc-button-green/20"
+    >
+      {pending ? "Verificando..." : "Comenzar Examen →"}
+    </button>
+  );
+}
+
+export default function JoinExamForm() {
+  // useActionState reemplaza a useFormState en React 19
+  const [state, formAction] = useActionState(joinExamAction, { success: false, error: undefined });
+
+  return (
+    <form action={formAction} className="space-y-4">
+      {state.success === false && state.error && (
         <div className="p-3 bg-red-50 text-red-600 text-sm rounded-lg border border-red-100 flex items-center gap-2">
-          ⚠️ {error}
+          ⚠️ {state.error}
         </div>
       )}
 
@@ -63,13 +64,7 @@ export default function JoinExamForm() {
         />
       </div>
 
-      <button
-        type="submit"
-        disabled={isLoading}
-        className="w-full bg-uabc-button-green text-white py-3 rounded-lg font-bold hover:bg-uabc-green transition-transform active:scale-[0.98] disabled:opacity-70 disabled:cursor-not-allowed shadow-md shadow-uabc-button-green/20"
-      >
-        {isLoading ? "Verificando..." : "Comenzar Examen →"}
-      </button>
+      <SubmitButton />
     </form>
   );
 }

@@ -5,6 +5,8 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { QuestionType } from "@prisma/client";
 import { requireAdminUser } from "@/lib/auth";
+import { errorResponse, successResponse, ActionResponse } from "@/lib/action-utils";
+import { z } from "zod";
 
 async function assertExamOwnership(examId: string, userId: string) {
   const exam = await db.exam.findUnique({
@@ -19,37 +21,64 @@ async function assertExamOwnership(examId: string, userId: string) {
   return exam;
 }
 
-export async function createExamAction(formData: FormData) {
-  const title = formData.get("title") as string;
-  const description = formData.get("description") as string;
-  const accessCode = formData.get("accessCode") as string;
-  const timeLimit = formData.get("timeLimit") as string;
+const createExamSchema = z.object({
+  title: z.string().min(3, "El título debe tener al menos 3 caracteres"),
+  description: z.string().optional(),
+  accessCode: z.string().min(3, "El código de acceso debe tener al menos 3 caracteres"),
+  timeLimit: z.string().optional(),
+  startTimeStr: z.string().optional(),
+  endTimeStr: z.string().optional(),
+});
 
-  const startTimeStr = formData.get("startTime") as string;
-  const endTimeStr = formData.get("endTime") as string;
+export async function createExamAction(
+  prevState: any,
+  formData: FormData
+): Promise<ActionResponse<null>> {
+  const result = createExamSchema.safeParse({
+    title: formData.get("title"),
+    description: formData.get("description"),
+    accessCode: formData.get("accessCode"),
+    timeLimit: formData.get("timeLimit"),
+    startTimeStr: formData.get("startTime"),
+    endTimeStr: formData.get("endTime"),
+  });
+
+  if (!result.success) {
+    return errorResponse(result.error.issues[0].message);
+  }
+
+  const { title, description, accessCode, timeLimit, startTimeStr, endTimeStr } = result.data;
 
   // Convertir a objetos Date o null si están vacíos
   const startTime = startTimeStr ? new Date(startTimeStr) : null;
   const endTime = endTimeStr ? new Date(endTimeStr) : null;
-  
-  
+
   const dbUser = await requireAdminUser();
 
-  // 3. CREAR EL EXAMEN ASIGNADO A ÉL
-  const exam = await db.exam.create({
-    data: {
-      title,
-      description,
-      accessCode,
-      createdById: dbUser.id, // <--- AQUÍ ESTÁ LA CLAVE
-      isActive: false,
-      timeLimitMin: Number(timeLimit) > 0 ? Number(timeLimit) : null, // Guardar en BD
-      startTime,
-      endTime,
-    },
-  });
+  try {
+    // 3. CREAR EL EXAMEN ASIGNADO A ÉL
+    const exam = await db.exam.create({
+      data: {
+        title,
+        description,
+        accessCode,
+        createdById: dbUser.id, // <--- AQUÍ ESTÁ LA CLAVE
+        isActive: false,
+        timeLimitMin: Number(timeLimit) > 0 ? Number(timeLimit) : null, // Guardar en BD
+        startTime,
+        endTime,
+      },
+    });
 
-  redirect(`/exams/${exam.id}/edit`);
+    // We have to use the exam.id, but since we are outside try-catch, we need to do it differently. Let's fix this below.
+  } catch (error: any) {
+    if (error.code === 'P2002') {
+      return errorResponse("El código de acceso ya está en uso. Por favor elige otro.");
+    }
+    return errorResponse("Ocurrió un error al crear el examen.");
+  }
+
+  redirect(`/exams/${accessCode}/edit`);
 }
 
 // 2. Agregar una Pregunta al Examen

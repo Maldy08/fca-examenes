@@ -109,6 +109,9 @@ model ExamAttempt {
   warnings Int    @default(0)
 
   answers Answer[]
+
+  @@index([userId])
+  @@index([examId, status])
 }
 
 model Answer {
